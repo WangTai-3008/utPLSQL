@@ -33,7 +33,20 @@ create or replace package body ut_suite_cache_manager is
                    )
         )
       ),
-      {:tags:}
+      filter_tags as (
+        select c.obj.path as path
+          from suite_items c
+         where c.obj.tags multiset intersect :a_tag_list is not empty
+      ),
+      suite_items_tags as (
+        select c.*
+          from suite_items c
+         where exists (
+           select 1 from filter_tags t
+            where t.path||'.' like c.obj.path || '.%' /*all children and self*/
+               or c.obj.path||'.' like t.path || '.%'  --all parents
+           )
+      ),
       suitepaths as (
         select distinct substr(c.obj.path,1,instr(c.obj.path,'.',-1)-1) as suitepath,
                         c.obj.path as path,
@@ -106,46 +119,24 @@ create or replace package body ut_suite_cache_manager is
   function get_path_sql(a_path in varchar2) return varchar2 is
   begin
     return case when a_path is not null then q'[
-                      :l_path||'.' like c.path || '.%' /*all children and self*/
-                     or ( c.path||'.' like :l_path || '.%'  --all parents
+                      :l_path||'.' like c.path || '.%' /* all children and self */
+                     or ( c.path||'.' like :l_path || '.%'  /* all parents */
                             ]'
-           else ' :l_path is null  and ( :l_path is null ' end;
+           else ' ( (1=1) or :l_path is null )  and ( ((1=1) or :l_path is null) ' end;
   end;
 
   function get_object_name_sql(a_object_name in varchar2) return varchar2 is
   begin
     return case when a_object_name is not null
       then ' c.object_name = :a_object_name '
-           else ' :a_object_name is null' end;
+           else ' ( (1=1) or :a_object_name is null) ' end;
   end;
 
   function get_procedure_name_sql(a_procedure_name in varchar2) return varchar2 is
   begin
     return case when a_procedure_name is not null
       then ' c.name = :a_procedure_name'
-           else ' :a_procedure_name is null' end;
-  end;
-
-  function get_tags_sql(a_tags_count in integer) return varchar2 is
-  begin
-    return case when a_tags_count > 0 then
-      q'[filter_tags as (
-        select c.obj.path as path
-          from suite_items c
-         where c.obj.tags multiset intersect :a_tag_list is not empty
-      ),
-       suite_items_tags as (
-       select c.*
-         from suite_items c
-        where exists (
-          select 1 from filter_tags t
-           where t.path||'.' like c.obj.path || '.%' /*all children and self*/
-              or c.obj.path||'.' like t.path || '.%'  --all parents
-          )
-       ),]'
-           else
-             q'[dummy as (select 'x' from dual where :a_tag_list is null ),]'
-           end;
+           else ' ( (1=1) or :a_procedure_name is null)' end;
   end;
 
   function get_random_seed_sql(a_random_seed positive) return varchar2 is
@@ -209,7 +200,6 @@ create or replace package body ut_suite_cache_manager is
     l_sql := replace(l_sql,'{:path:}',get_path_sql(l_path));
     l_sql := replace(l_sql,'{:object_name:}',get_object_name_sql(l_object_name));
     l_sql := replace(l_sql,'{:procedure_name:}',get_procedure_name_sql(l_procedure_name));
-    l_sql := replace(l_sql,'{:tags:}',get_tags_sql(l_tags.count));
     l_sql := replace(l_sql,'{:random_seed:}',get_random_seed_sql(a_random_seed));
 
     ut_event_manager.trigger_event(ut_event_manager.gc_debug, ut_key_anyvalues().put('l_sql',l_sql) );
