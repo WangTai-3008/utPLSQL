@@ -1,4 +1,3 @@
-push and commit test.
 ![utPLSQL v3 | Testing Framework for PL/SQL](docs/images/utPLSQL-testing-framework-transparent_120.png)
 
 ----------
@@ -14,6 +13,9 @@ push and commit test.
 [![Coveralls coverage](https://coveralls.io/repos/github/utPLSQL/utPLSQL/badge.svg?branch=develop)](https://coveralls.io/github/utPLSQL/utPLSQL?branch=develop)
 
 ----------
+
+push and commit test.
+
 utPLSQL version 3 is a complete rewrite of utPLSQL v2 from scratch.
 Version 2 still supports older versions of Oracle that are no longer available. 
 The community that had developed on GitHub decided that a new internal architecture was needed, from that version 3 was born.  
