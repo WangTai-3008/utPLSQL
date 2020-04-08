@@ -14,7 +14,6 @@
 
 ----------
 
-push and commit test.
 
 utPLSQL version 3 is a complete rewrite of utPLSQL v2 from scratch.
 Version 2 still supports older versions of Oracle that are no longer available. 
